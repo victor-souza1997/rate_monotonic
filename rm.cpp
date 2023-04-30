@@ -11,7 +11,7 @@ struct Task {
 
 void print_tasks(const std::vector<Task>& tasks){
     
-    for (const Task& tasks : tasks) {
+    for (auto& tasks : tasks) {
         std::cout << "Task id: " << tasks.id << std::endl;
         std::cout << "Period: " << tasks.period << std::endl;
         std::cout << "Execution Time: " << tasks.execution_time << std::endl;
