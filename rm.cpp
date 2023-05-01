@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <limits.h>
 #include <iostream>
-#define T_SAMPLE 0.01
+#define T_SAMPLE 0.001
 #define TOTAL_TIME 100
 struct Task {
     int id;
@@ -16,9 +16,14 @@ struct Task {
     double waiting_time;
 };
 
-std::vector<int> increment_vector(std::vector<int>& vec, int num) {
-    if (vec.empty() || vec.back() != num) {
-        vec.push_back(num);
+struct Grant {
+    int vector;
+    double change_time;
+};
+
+std::vector<Grant> increment_vector(std::vector<Grant>& vec, int num, double time) {
+    if (vec.empty() || vec.back().vector != num) {
+        vec.push_back({num, time});
         //std::cout<<num<<std::endl;
     } 
     return vec;
@@ -59,7 +64,7 @@ void print_tasks(const std::vector<Task>& tasks){
         std::cout << "Execution Time: " << tasks.execution_time << std::endl;
         std::cout << "Processing Time: " << tasks.processing_execution_time << std::endl;
         std::cout << "Active: " << tasks.active << std::endl;
-        std::cout << std::endl; // add a blank line between each person
+        std::cout << std::endl; 
     }
 
 };
@@ -69,6 +74,9 @@ std::vector<Task> update_tasks(std::vector<Task> tasks) {
         if (!tasks[i].active) {
             tasks[i].waiting_time+=T_SAMPLE;
             if (tasks[i].waiting_time >= tasks[i].period) {
+
+                std::cout<< tasks[i].waiting_time << " " << tasks[i].period;
+                std::cout<<std::endl;
                 tasks[i].waiting_time = 0;
                 tasks[i].active = true;
             }
@@ -79,7 +87,7 @@ std::vector<Task> update_tasks(std::vector<Task> tasks) {
 
 
 void rate_monotonic(std::vector<Task>& tasks) {
-    std::vector<int> grant;
+    std::vector<Grant> grant;
 
     double time = 0.0;
     //std::sort(tasks.begin(), tasks.end(), compare_period);
@@ -90,16 +98,15 @@ void rate_monotonic(std::vector<Task>& tasks) {
     
     while (time < TOTAL_TIME){
         int n_turn;
-        std::cout<<"time: " << time << std::endl;
+        //std::cout<<"time: " << time << std::endl;
         n_turn = find_task_with_smallest_period(tasks) - 1;
-
+        tasks = update_tasks(tasks);
         if (n_turn < 0){
-            grant = increment_vector(grant, 0);      
+            grant = increment_vector(grant, 0, time);      
         }
         else{
-            tasks[n_turn].processing_execution_time += 0.1;
-            std::cout<<"n_turn " << n_turn << std::endl;
-            grant = increment_vector(grant, n_turn+1);   
+            //std::cout<<"n_turn " << n_turn << std::endl;
+            grant = increment_vector(grant, n_turn+1, time);   
             //std::cout<<"n_turn: " << n_turn << " processing " << tasks[n_turn].processing_execution_time << std::endl;
             if (tasks[n_turn].processing_execution_time >= tasks[n_turn].execution_time){
                 tasks[n_turn].processing_execution_time = 0;
@@ -107,17 +114,19 @@ void rate_monotonic(std::vector<Task>& tasks) {
                 
         
             }
+            tasks[n_turn].processing_execution_time += T_SAMPLE;
             
         }
 
-        tasks = update_tasks(tasks);
+        
         
         //print_tasks(tasks);
         time += T_SAMPLE;
     }
     //std::cout<<grant<<std::endl;
     for(int i=0; i<grant.size(); i++) {
-        std::cout << grant[i] << " ";
+        std::cout << "("<<grant[i].vector<< ", ";
+        std::cout << grant[i].change_time<<"), ";
     }
     std::cout << std::endl;
 }
@@ -128,6 +137,7 @@ int main() {
     std::vector<Task> tasks;
     std::cout << "Input the number of tasks: ";
     std::cin >> n;
+    
     for (int i = 0; i < n; i++) {
         Task t;
         std::cout << "Input the period of the task " << i+1 << ": ";
