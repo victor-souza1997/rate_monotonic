@@ -5,7 +5,10 @@
 #include <algorithm>
 #include <limits.h>
 #include <iostream>
-#define T_SAMPLE 0.001
+
+
+
+#define T_SAMPLE 0.01
 #define TOTAL_TIME 100
 struct Task {
     int id;
@@ -19,6 +22,22 @@ struct Task {
 struct Grant {
     int vector;
     double change_time;
+};
+
+
+
+void print_tasks(const std::vector<Task>& tasks){
+    
+    for (auto& tasks : tasks) {
+        std::cout << "Task id: " << tasks.id << std::endl;
+        std::cout << "Period: " << tasks.period << std::endl;
+        std::cout << "waiting_time: " << tasks.waiting_time << std::endl;
+        std::cout << "Execution Time: " << tasks.execution_time << std::endl;
+        std::cout << "Processing Time: " << tasks.processing_execution_time << std::endl;
+        std::cout << "Active: " << tasks.active << std::endl;
+        std::cout << std::endl; 
+    }
+
 };
 
 std::vector<Grant> increment_vector(std::vector<Grant>& vec, int num, double time) {
@@ -55,30 +74,20 @@ double calculates_processing(const std::vector<Task>& tasks){
     }
     return sum;
 }
-void print_tasks(const std::vector<Task>& tasks){
-    
-    for (auto& tasks : tasks) {
-        std::cout << "Task id: " << tasks.id << std::endl;
-        std::cout << "Period: " << tasks.period << std::endl;
-        std::cout << "waiting_time: " << tasks.waiting_time << std::endl;
-        std::cout << "Execution Time: " << tasks.execution_time << std::endl;
-        std::cout << "Processing Time: " << tasks.processing_execution_time << std::endl;
-        std::cout << "Active: " << tasks.active << std::endl;
-        std::cout << std::endl; 
-    }
-
-};
 
 std::vector<Task> update_tasks(std::vector<Task> tasks) {
     for (int i = 0; i < tasks.size(); i++) {
         if (!tasks[i].active) {
-            tasks[i].waiting_time+=T_SAMPLE;
+            
             if (tasks[i].waiting_time >= tasks[i].period) {
-
-                std::cout<< tasks[i].waiting_time << " " << tasks[i].period;
-                std::cout<<std::endl;
+               // std::cout<< i << " ";
+               // std::cout<< tasks[i].waiting_time << " " << tasks[i].period;
+                //std::cout<<std::endl;
                 tasks[i].waiting_time = 0;
                 tasks[i].active = true;
+            }
+            else{
+                tasks[i].waiting_time+=T_SAMPLE;
             }
         }
     }
@@ -89,18 +98,14 @@ std::vector<Task> update_tasks(std::vector<Task> tasks) {
 void rate_monotonic(std::vector<Task>& tasks) {
     std::vector<Grant> grant;
 
-    double time = 0.0;
-    //std::sort(tasks.begin(), tasks.end(), compare_period);
-
-    
-    //print_tasks(tasks);
-    
+    double time = 0.0 ;
     
     while (time < TOTAL_TIME){
         int n_turn;
+        
         //std::cout<<"time: " << time << std::endl;
         n_turn = find_task_with_smallest_period(tasks) - 1;
-        tasks = update_tasks(tasks);
+        
         if (n_turn < 0){
             grant = increment_vector(grant, 0, time);      
         }
@@ -111,24 +116,25 @@ void rate_monotonic(std::vector<Task>& tasks) {
             if (tasks[n_turn].processing_execution_time >= tasks[n_turn].execution_time){
                 tasks[n_turn].processing_execution_time = 0;
                 tasks[n_turn].active = false;
-                
-        
+                //print_tasks(tasks);
             }
-            tasks[n_turn].processing_execution_time += T_SAMPLE;
-            
+            else{
+                tasks[n_turn].processing_execution_time += T_SAMPLE;
+            }
+             
         }
-
-        
-        
-        //print_tasks(tasks);
         time += T_SAMPLE;
+        tasks = update_tasks(tasks);
+       // print_tasks(tasks);
+        //std::cout<<time<<std::endl;
     }
-    //std::cout<<grant<<std::endl;
+    std::cout<<"diagrama de grant:"<<std::endl;
     for(int i=0; i<grant.size(); i++) {
-        std::cout << "("<<grant[i].vector<< ", ";
-        std::cout << grant[i].change_time<<"), ";
+        //std::cout << "("<<grant[i].vector<< ", ";
+        //std::cout << grant[i].change_time<<"), ";
+        std:: cout << "task_id:" << grant[i].vector<<" ";   
     }
-    std::cout << std::endl;
+    std::cout << time<< std::endl;
 }
 
 
@@ -136,7 +142,9 @@ int main() {
     int n;
     std::vector<Task> tasks;
     std::cout << "Input the number of tasks: ";
-    std::cin >> n;
+    //std::cin >> n;
+    n = 3;
+    /*
     
     for (int i = 0; i < n; i++) {
         Task t;
@@ -150,19 +158,29 @@ int main() {
         t.processing_execution_time = 0.0;
         tasks.push_back(t);
     }
+    */
+    tasks = {
+        {1,  25, 6.25, true, 0, 0},
+        {2,  50, 6.25, true, 0, 0},
+        {3,  100, 40, true, 0, 0}
 
+    };
     //print_tasks(tasks);
     double sum = calculates_processing(tasks);
 
-    double maximum_sum = n * (pow(2, 1/n) - 1);
-    std::cout << sum << std::endl;
-    std::cout << maximum_sum <<std::endl;
+    double maximum_sum = n*(pow(2, 1/n)-1);
+    //std::cout << sum << std::endl;
+    //std::cout << maximum_sum <<std::endl;
     bool is_scalable;
     if (sum<=maximum_sum){
         is_scalable = true;
+        std::cout<<"O conjunto de tarefas sao escalaveis" << std::endl;
+        std::cout<<"U = " << sum << " <= " << maximum_sum << std::endl; 
     }
     else{
         is_scalable = false;
+        std::cout<<"O conjunto de tarefas falharam no teste de escabilidade, no entando, ainda podem ser escalaveis" << std::endl;
+        std::cout<<"U = " << sum << " > " << maximum_sum << std::endl;
     } 
 
     rate_monotonic(tasks);
